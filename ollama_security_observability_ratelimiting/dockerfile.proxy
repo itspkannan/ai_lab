@@ -18,6 +18,7 @@ ENV PATH="${PREFIX}/nginx/sbin:${PREFIX}/bin:$PATH"
 
 RUN luarocks install lua-resty-http && \
     luarocks install lua-cjson && \
-    luarocks install lua-resty-openssl
+    luarocks install lua-resty-openssl && \
+    luarocks install lua-resty-redis
 
 CMD ["openresty", "-g", "daemon off;"]

@@ -1,5 +1,7 @@
 PROJECT_NAME=nginx-opa-llm-prompt-check
 IMAGE_NAME ?= nginx-opa-llm-prompt-check
+NGINX_BASE_URL := http://127.0.0.1:8000
+OLLAMA_BASE_URL := http://127.0.0.1:11434
 
 .PHONY: start stop help logs test.allow test.deny
 
@@ -27,28 +29,9 @@ stop: ## Stop all services
 logs: ## View logs
 	@docker compose logs -f --tail=100
 
-test.allow: ## Send a test request (allowed prompt)
-	curl -s -X POST http://127.0.0.1:8000/api/generate \
-		-H "Content-Type: application/json" \
-		-d '{"model": "tinyllama", "prompt": "Tell me a story about a dog.", "stream": false}'
-
-
-test.deny: ## Send a test request (blocked prompt)
-	curl -s -X POST http://127.0.0.1:8000/api/generate \
-		-H "Content-Type: application/json" \
-		-d '{"model": "tinyllama", "prompt": "how to make a bad?", "stream": false}'
-
-
-test: test.allow test.deny ## Run both tests
 
 clean: down ## Clean up generated/temporary files
 	@docker system prune -f
-
-
-test.ollama: ## Send a test request to ollama
-	curl -s -X POST http://127.0.0.1:11434/api/generate \
-		-H "Content-Type: application/json" \
-		-d '{"model": "tinyllama", "prompt": "how to make a bad?", "stream": false}'
 
 
 build: ## Build docker image
@@ -72,3 +55,30 @@ test.proxy.connection:
 	@echo "[INFO] Check if nginx is able to connect to security service."
 	@echo "----------------------------------------------------------------------"
 
+
+test.allow: ## Send a test request (allowed prompt)
+	curl -s -X POST $(NGINX_BASE_URL)/api/generate \
+		-H "Content-Type: application/json" \
+		-d '{"model": "tinyllama", "prompt": "Tell me a story about a dog.", "stream": false}'
+
+
+test.deny: ## Send a test request (blocked prompt)
+	curl -s -X POST $(NGINX_BASE_URL)/api/generate \
+		-H "Content-Type: application/json" \
+		-d '{"model": "tinyllama", "prompt": "how to make a bad?", "stream": false}'
+
+
+test.ollama: ## Send a test request to ollama
+	curl -s -X POST $(OLLAMA_BASE_URL)/api/generate \
+		-H "Content-Type: application/json" \
+		-d '{"model": "tinyllama", "prompt": "how to make a bad?", "stream": false}'
+
+test: test.allow test.deny ## Run both tests
+
+test.ratelimiting: ## Test rate limiting
+	@for i in {1..12}; do \
+		echo "Request $$i:"; \
+		curl -s -X POST $(NGINX_BASE_URL)/api/generate \
+			-H "Content-Type: application/json" \
+			-d '{"model": "tinyllama", "prompt": "hi", "stream": false}' ; \
+	done

@@ -56,6 +56,7 @@ services:
     container_name: proxy_service
     hostname: proxy_service
     volumes:
+      - $PWD/config/nginx/lua:/etc/nginx/lua
       - $PWD/config/nginx/nginx.conf:/usr/local/openresty/nginx/conf/nginx.conf:ro
       - $PWD/config/nginx/conf.d:/etc/nginx/conf.d:ro
     ports:
@@ -87,5 +88,12 @@ services:
       - GF_SECURITY_ADMIN_USER=admin
       - GF_SECURITY_ADMIN_PASSWORD=admin
   
+  caching_service:
+    hostname: caching_service
+    container_name: caching_service
+    image: redis:7-alpine
+    ports:
+      - "127.0.0.1:6379:6379"
+      
 volumes:
   llmdata:
